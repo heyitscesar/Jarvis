@@ -23,6 +23,23 @@ let fullscreenElement: Element | null = null;
 Object.defineProperty(document, 'fullscreenElement', {
   get: () => fullscreenElement,
   set: (val) => { fullscreenElement = val; },
+  // Fix: Make property configurable to avoid redefinition errors across tests.
+  configurable: true,
+});
+
+// Fix: Mock canvas context to test drawing operations since the component uses canvas, not SVG.
+const mockContext = {
+  fillRect: vi.fn(),
+  clearRect: vi.fn(),
+  scale: vi.fn(),
+  fillStyle: '',
+};
+
+vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((contextId) => {
+  if (contextId === '2d') {
+    return mockContext as any;
+  }
+  return null;
 });
 
 
@@ -32,6 +49,7 @@ describe('App', () => {
     vi.clearAllMocks();
     mockedIo.mockReturnValue(mockSocket as any);
     fullscreenElement = null;
+    mockContext.fillStyle = '';
 
     // Default mock implementation
     mockSocket.on.mockImplementation((event, callback) => {
@@ -68,16 +86,16 @@ describe('App', () => {
       brightnessCallback(20);
     });
 
-    const svg = screen.getByRole('graphics-document');
-    const rect = svg.querySelector('rect');
-    expect(rect).toHaveAttribute('fill', valueToHex(20));
+    // Fix: Assert on the mocked canvas context's fillStyle property instead of a non-existent SVG element.
+    expect(mockContext.fillStyle).toBe(valueToHex(20));
   });
 
   it('emits a "brightnessChange" event on mouse wheel scroll', () => {
     render(<App />);
-    const svg = screen.getByRole('graphics-document');
+    // Fix: Use a more descriptive variable name than 'svg'.
+    const container = screen.getByRole('graphics-document');
 
-    fireEvent.wheel(svg, { deltaY: -100 });
+    fireEvent.wheel(container, { deltaY: -100 });
 
     const expectedBrightness = constants.INITIAL_BRIGHTNESS - (-100 * constants.BRIGHTNESS_SENSITIVITY);
     expect(mockSocket.emit).toHaveBeenCalledWith('brightnessChange', expectedBrightness);
@@ -86,16 +104,17 @@ describe('App', () => {
   it('toggles fullscreen on double click', async () => {
     const user = userEvent.setup();
     render(<App />);
-    const svg = screen.getByRole('graphics-document');
+    // Fix: Use a more descriptive variable name than 'svg'.
+    const container = screen.getByRole('graphics-document');
 
-    await user.dblClick(svg);
+    await user.dblClick(container);
 
     expect(document.documentElement.requestFullscreen).toHaveBeenCalledTimes(1);
     
     // Simulate being in fullscreen
     fullscreenElement = document.documentElement;
     
-    await user.dblClick(svg);
+    await user.dblClick(container);
     expect(document.exitFullscreen).toHaveBeenCalledTimes(1);
   });
 

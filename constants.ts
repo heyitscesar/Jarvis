@@ -1,4 +1,4 @@
-export const SERVER_URL = 'http://localhost:4001';
+export const SERVER_URL = `http://${window.location.hostname}:4001`;
 export const INITIAL_BRIGHTNESS = 3;
 export const MIN_BRIGHTNESS = 3;
 export const MAX_BRIGHTNESS = 36;
