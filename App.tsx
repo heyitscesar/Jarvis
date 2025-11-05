@@ -88,8 +88,35 @@ interface DitherPatternProps {
 }
 
 const DitherPattern: React.FC<DitherPatternProps> = memo(({ foregroundColor, onBrightnessChange, rects }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastTouchY = useRef(0);
   const lastTapTime = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Scale canvas for high-DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.scale(dpr, dpr);
+
+    // Clear and redraw the pattern
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = foregroundColor;
+    for (const rect of rects) {
+      ctx.fillRect(rect.x, rect.y, PIXEL_SIZE, PIXEL_SIZE);
+    }
+  }, [rects, foregroundColor]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -110,7 +137,7 @@ const DitherPattern: React.FC<DitherPatternProps> = memo(({ foregroundColor, onB
   }, [toggleFullscreen]);
 
   return (
-    <svg
+    <div
       role="graphics-document"
       aria-label="Interactive dither pattern"
       className="w-screen h-screen block"
@@ -129,17 +156,8 @@ const DitherPattern: React.FC<DitherPatternProps> = memo(({ foregroundColor, onB
       }}
       onDoubleClick={toggleFullscreen}
     >
-      {rects.map((rect, i) => (
-        <rect
-          key={i}
-          x={rect.x}
-          y={rect.y}
-          width={PIXEL_SIZE}
-          height={PIXEL_SIZE}
-          fill={foregroundColor}
-        />
-      ))}
-    </svg>
+      <canvas ref={canvasRef} />
+    </div>
   );
 });
 DitherPattern.displayName = 'DitherPattern';
