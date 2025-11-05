@@ -1,0 +1,5 @@
+{
+  "name": "Real-time Dither Sync",
+  "description": "A collaborative, full-screen dither pattern artwork where users can adjust the brightness in real-time, with changes synchronized across all connected clients using Socket.IO.",
+  "requestFramePermissions": []
+}
