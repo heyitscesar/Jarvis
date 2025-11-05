@@ -71,8 +71,10 @@ const useDither = () => {
   useEffect(() => {
     generateDither();
     window.addEventListener('resize', generateDither);
+    document.addEventListener('fullscreenchange', generateDither);
     return () => {
       window.removeEventListener('resize', generateDither);
+      document.removeEventListener('fullscreenchange', generateDither);
     };
   }, [generateDither]);
 
